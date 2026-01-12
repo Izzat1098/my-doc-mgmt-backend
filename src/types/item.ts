@@ -23,6 +23,7 @@ export interface CreateItem {
   item_type: 'folder' | 'file';
   parent_id: number | null;
   file_size_kb?: number | null;
+  s3_url?: string | null;
   created_by?: string | null;
 }
 

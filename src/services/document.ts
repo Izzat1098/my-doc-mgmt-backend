@@ -50,9 +50,6 @@ export async function getItemsByTitle (
   const query = `SELECT * FROM items WHERE title LIKE ? AND deleted_at IS NULL ORDER BY item_type ASC, title ASC`;
   const param = [`%${title}%`];
 
-  console.log(`query: ${query}`)
-  console.log(`param: ${param}`)
-
   const [rows] = await pool.execute<mysql.RowDataPacket[]>(query, param);
   return rows as Item[];
 };
@@ -63,13 +60,13 @@ export async function getItemsByTitle (
  * @returns The newly created item
  */
 export async function createItem(data: CreateItem): Promise<Item> {
-  const { title, item_type, parent_id, file_size_kb, created_by } = data;
+  const { title, item_type, parent_id, file_size_kb, s3_url, created_by } = data;
 
   // Insert the item
   const [result] = await pool.execute<mysql.ResultSetHeader>(
-    `INSERT INTO items (title, item_type, parent_id, file_size_kb, created_by) 
-     VALUES (?, ?, ?, ?, ?)`,
-    [title, item_type, parent_id, file_size_kb, created_by]
+    `INSERT INTO items (title, item_type, parent_id, file_size_kb, s3_url, created_by) 
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [title, item_type, parent_id, file_size_kb, s3_url, created_by]
   );
 
   const insertId = result.insertId;
@@ -92,7 +89,7 @@ export async function createItem(data: CreateItem): Promise<Item> {
     item_type,
     parent_id,
     file_size_kb: file_size_kb || null,
-    s3_url: null,
+    s3_url: s3_url || null,
     created_by: created_by || null,
     deleted_at: null,
     created_at: new Date(),

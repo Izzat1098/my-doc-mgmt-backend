@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { getItemById, getItemsByParentId, getItemsByTitle, createItem, deleteItemById, getDeletedItems, restoreDeletedItemById } from '../services/document.js';
 import type { Item, CreateItem } from '../types/item.js';
+import { createPresignedPost } from '../services/s3.js';
 
 /**
  * Get documents with optional filtering
@@ -16,8 +17,6 @@ export async function getDocuments(
   try {
     const { title, parentId } = req.query;
     let items: Item | Item[] | null;
-
-    // console.log(`title: ${title}, parentid: ${parentId}`)
 
     // Validate: if query params exist but aren't supported, return error
     if (Object.keys(req.query).length > 0 && !title && !parentId) {
@@ -121,6 +120,14 @@ export async function getDocumentById(
 /**
  * Add document or folder
  * @route   POST /api/documents
+ * 
+ * Flow for Request upload URL for a new file upload:
+ * 1. Client sends file metadata (title, fileName, contentType, etc.)
+ * 2. Backend creates a file item in the database
+ * 3. Backend generates presigned URL and stores the final S3 URL in the database
+ * 4. Backend returns the presigned URL to Client
+ * 5. Client uploads the file directly to S3 using the presigned URL (PUT request)
+ *
  * @access  Public
  */
 export async function addDocument(
@@ -140,7 +147,6 @@ export async function addDocument(
       return;
     }
 
-    // Validate item_type
     if (item_type !== 'folder' && item_type !== 'file') {
       res.status(400).json({
         success: false,
@@ -160,12 +166,34 @@ export async function addDocument(
       }
     }
 
+    let s3Url = null
+    let uploadUrl = ""
+
+    // If item is a file, generate presigned URL for S3 upload
+    // Generate unique S3 key using timestamp and sanitized filename
+    if (item_type === "file") {
+
+      const timestamp = Date.now();
+      const sanitizedFileName = title.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const s3Key = `uploads/${timestamp}-${sanitizedFileName}`;
+
+      // Create presigned URL for upload
+      const { fileLink, signedUrl } = await createPresignedPost({
+        key: s3Key,
+        contentType: item_type,
+      });
+      
+      s3Url = fileLink
+      uploadUrl = signedUrl
+    }
+
     // Create the item data
     const itemData: CreateItem = {
       title,
       item_type,
       parent_id: parent_id !== undefined ? parent_id : null,
       file_size_kb: file_size_kb !== undefined ? file_size_kb : null,
+      s3_url: s3Url,
       created_by: created_by !== undefined ? created_by : "admin",
     };
 
@@ -176,6 +204,7 @@ export async function addDocument(
       success: true,
       message: `${item_type === 'folder' ? 'Folder' : 'File'} created successfully`,
       data: newItem,
+      uploadUrl: uploadUrl
     });
 
   } catch (error) {

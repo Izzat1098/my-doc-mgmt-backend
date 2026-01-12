@@ -14,6 +14,10 @@ interface EnvConfig {
   CORS_ORIGIN: string;
   RATE_LIMIT_WINDOW_MS: number;
   RATE_LIMIT_MAX_REQUESTS: number;
+  AWS_S3_REGION: string;
+  AWS_BUCKET_NAME: string;
+  AWS_ACCESS_KEY: string;
+  AWS_SECRET_ACCESS_KEY: string;
 }
 
 const getEnv = (key: string, defaultValue?: string): string => {
@@ -44,4 +48,8 @@ export const env: EnvConfig = {
   CORS_ORIGIN: getEnv('CORS_ORIGIN', 'http://localhost:5173'),
   RATE_LIMIT_WINDOW_MS: getEnvNumber('RATE_LIMIT_WINDOW_MS', 900000),
   RATE_LIMIT_MAX_REQUESTS: getEnvNumber('RATE_LIMIT_MAX_REQUESTS', 100),
+  AWS_S3_REGION: getEnv('AWS_S3_REGION', 'none'),
+  AWS_BUCKET_NAME: getEnv('AWS_BUCKET_NAME', 'none'),
+  AWS_ACCESS_KEY: getEnv('AWS_ACCESS_KEY', 'none'),
+  AWS_SECRET_ACCESS_KEY: getEnv('AWS_SECRET_ACCESS_KEY', 'none'),
 };
