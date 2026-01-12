@@ -1,13 +1,13 @@
 import express, { type Application } from 'express';
 // import helmet from 'helmet';
-// import cors from 'cors';
+import cors from 'cors';
 // import compression from 'compression';
 // import rateLimit from 'express-rate-limit';
 import { env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
 import { requestLogger } from './middlewares/logger.js';
-import healthRouter from './routes/health.routes.js';
-import documentRouter from './routes/document.routes.js';
+import healthRouter from './routes/health.js';
+import documentRouter from './routes/document.js';
 
 const app: Application = express();
 
@@ -15,12 +15,12 @@ const app: Application = express();
 // app.use(helmet());
 
 // CORS configuration
-// app.use(
-//   cors({
-//     origin: env.CORS_ORIGIN,
-//     credentials: true,
-//   })
-// );
+app.use(
+  cors({
+    origin: env.CORS_ORIGIN.split(','),  // Supports multiple origins
+    credentials: true,
+  })
+);
 
 // Rate limiting
 // const limiter = rateLimit({
