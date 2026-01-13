@@ -65,7 +65,7 @@ export async function getItemsByParentId (
  * @returns Array of items
  */
 export async function getItemsByTitle (
-  title: String
+  title: string
 ): Promise<Item[]> {
   const query = `SELECT * FROM items WHERE title LIKE ? AND deleted_at IS NULL ORDER BY item_type ASC, title ASC`;
   const param = [`%${title}%`];
@@ -97,7 +97,7 @@ export async function getItemsByType (
  * @returns Array of items
  */
 export async function getItemsByTitleParentType (
-  title: String,
+  title: string,
   parentId: number | null,
   itemType: 'folder' | 'file'
 ): Promise<Item[]> {
