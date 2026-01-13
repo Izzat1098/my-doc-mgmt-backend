@@ -54,17 +54,8 @@ export async function getDocuments(req: Request, res: Response): Promise<void> {
       items = await getItemsByParentId(null);
     }
 
-    // Check if results found
-    if (!parentId && (!items || (Array.isArray(items) && items.length === 0))) {
-      res.status(404).json({
-        success: false,
-        message: 'No items found',
-      });
-      return;
-    }
-
-    console.log('items');
-    console.log(items);
+    // if no items in DB, to return empty list
+    if (!items) { items = []}
 
     res.status(200).json({
       success: true,

@@ -27,11 +27,7 @@ CREATE TABLE items (
     FOREIGN KEY (parent_id) REFERENCES items(id) ON DELETE CASCADE
 );
 
-
-
-
 -- Dev commands
-
 -- Check schema
 DESCRIBE items;
 
