@@ -7,7 +7,7 @@ import { createPresignedPost } from '../services/s3.js';
  * Get documents with optional filtering
  * @route   GET /api/documents
  * @route   GET /api/documents?title=search
- * @route   GET /api/documents?parent_id=5
+ * @route   GET /api/documents?parentId=5
  * @access  Public
  */
 export async function getDocuments(
@@ -37,7 +37,7 @@ export async function getDocuments(
       if (isNaN(parentIdNum) || parentIdNum <= 0) {
         res.status(400).json({
           success: false,
-          message: 'Invalid parent_id',
+          message: 'Invalid parentId',
         });
         return;
       }
@@ -57,6 +57,10 @@ export async function getDocuments(
       return;
     }
 
+    console.log("items")
+    console.log(items)
+
+
     res.status(200).json({
       success: true,
       data: items,
@@ -70,10 +74,8 @@ export async function getDocuments(
   }
 }
 
-
-
 /**
- * Get a specific document by ID
+ * Get a specific document by id
  * @route   GET /api/documents/:id
  * @access  Public
  */
@@ -87,7 +89,7 @@ export async function getDocumentById(
     if (isNaN(id) || id <= 0) {
       res.status(400).json({
         success: false,
-        message: 'Invalid item ID',
+        message: 'Invalid item id',
       });
       return;
     }
@@ -108,7 +110,7 @@ export async function getDocumentById(
     });
 
   } catch (error) {
-    console.error('Error fetching item by ID:', error);
+    console.error('Error fetching item by id:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error',
@@ -116,13 +118,12 @@ export async function getDocumentById(
   }
 }
 
-
 /**
  * Add document or folder
  * @route   POST /api/documents
  * 
  * Flow for Request upload URL for a new file upload:
- * 1. Client sends file metadata (title, fileName, contentType, etc.)
+ * 1. Client sends file metadata (title, itemType, fileSizeKb, etc.)
  * 2. Backend creates a file item in the database
  * 3. Backend generates presigned URL and stores the final S3 URL in the database
  * 4. Backend returns the presigned URL to Client
@@ -135,58 +136,58 @@ export async function addDocument(
   res: Response
 ): Promise<void> {
   try {
-    const { title, item_type, parent_id, file_size_kb, created_by }: CreateItem = req.body;
+    const { title, itemType, parentId, fileSizeKb, createdBy }: CreateItem = req.body;
 
     // Validate required fields
-    if (!title || !item_type) {
+    if (!title || !itemType) {
       res.status(400).json({
         success: false,
-        message: 'Missing required fields: title and item_type',
+        message: 'Missing required fields: title and itemType',
       });
       return;
     }
 
-    if (item_type !== 'folder' && item_type !== 'file') {
+    if (itemType !== 'folder' && itemType !== 'file') {
       res.status(400).json({
         success: false,
-        message: 'item_type must be either "folder" or "file"',
+        message: 'itemType must be either "folder" or "file"',
       });
       return;
     }
 
-    // Validate parent_id if provided
-    if (parent_id !== null && parent_id !== undefined) {
-      if (typeof parent_id !== 'number' || parent_id <= 0) {
+    // Validate parentId if provided
+    if (parentId !== null && parentId !== undefined) {
+      if (typeof parentId !== 'number' || parentId <= 0) {
         res.status(400).json({
           success: false,
-          message: 'parent_id must be a positive number or null',
+          message: 'parentId must be a positive number or null',
         });
         return;
       }
-      const parentItem = await getItemById(parent_id);
+      const parentItem = await getItemById(parentId);
       if (!parentItem) {
         res.status(400).json({
           success: false,
-          message: 'parent_id does not exists',
+          message: 'parentId does not exists',
         });
         return;
 
-      } else if (parentItem.item_type !== 'folder') {
+      } else if (parentItem.itemType !== 'folder') {
         res.status(400).json({
           success: false,
-          message: 'parent_id is not a folder',
+          message: 'Item with parentId is not a folder',
         });
         return;
       }
     }
 
     // Validate that item is not already in parent folder
-    const existingItems = await getItemsByTitleParentType(title, parent_id !== undefined ? parent_id : null, item_type);
+    const existingItems = await getItemsByTitleParentType(title, parentId !== undefined ? parentId : null, itemType);
 
     if (existingItems && existingItems.length > 0) {
       res.status(400).json({
         success: false,
-        message: 'item with same file name already exists',
+        message: 'item with same title already exists',
       });
       return;
     }
@@ -196,7 +197,7 @@ export async function addDocument(
 
     // If item is a file, generate presigned URL for S3 upload
     // Generate unique S3 key using timestamp and sanitized filename
-    if (item_type === "file") {
+    if (itemType === "file") {
 
       const timestamp = Date.now();
       const sanitizedFileName = title.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -205,7 +206,7 @@ export async function addDocument(
       // Create presigned URL for upload
       const { fileLink, signedUrl } = await createPresignedPost({
         key: s3Key,
-        contentType: item_type,
+        contentType: itemType,
       });
       
       s3Url = fileLink
@@ -215,11 +216,11 @@ export async function addDocument(
     // Create the item data
     const itemData: CreateItem = {
       title,
-      item_type,
-      parent_id: parent_id !== undefined ? parent_id : null,
-      file_size_kb: file_size_kb !== undefined ? file_size_kb : null,
-      s3_url: s3Url,
-      created_by: created_by !== undefined ? created_by : "admin",
+      itemType,
+      parentId: parentId !== undefined ? parentId : null,
+      fileSizeKb: fileSizeKb !== undefined ? fileSizeKb : null,
+      s3Url: s3Url,
+      createdBy: createdBy !== undefined ? createdBy : "admin",
     };
 
     // Insert into database
@@ -227,7 +228,7 @@ export async function addDocument(
 
     res.status(201).json({
       success: true,
-      message: `${item_type === 'folder' ? 'Folder' : 'File'} created successfully`,
+      message: `${itemType === 'folder' ? 'Folder' : 'File'} created successfully`,
       data: newItem,
       uploadUrl: uploadUrl
     });
@@ -242,7 +243,7 @@ export async function addDocument(
 }
 
 /**
- * Delete a document or folder by ID (soft delete)
+ * Delete a document or folder by id (soft delete)
  * @route   DELETE /api/documents/:id
  * @access  Public
  */
@@ -257,7 +258,7 @@ export async function deleteDocumentById(
     if (isNaN(id) || id <= 0) {
       res.status(400).json({
         success: false,
-        message: 'Invalid item ID',
+        message: 'Invalid item Id',
       });
       return;
     }
@@ -277,6 +278,7 @@ export async function deleteDocumentById(
       success: true,
       message: 'Item deleted successfully',
     });
+
   } catch (error) {
     console.error('Error deleting item:', error);
     res.status(500).json({
@@ -285,7 +287,6 @@ export async function deleteDocumentById(
     });
   }
 }
-
 
 /**
  * Get documents with optional filtering
@@ -313,9 +314,8 @@ export async function getDeletedDocuments(
   }
 }
 
-
 /**
- * Restore specific deleted document by ID
+ * Restore specific deleted document by id
  * @route   PATCH /api/documents/:id/restore
  * @access  Public
  */
@@ -329,7 +329,7 @@ export async function restoreDocumentById(
     if (isNaN(id) || id <= 0) {
       res.status(400).json({
         success: false,
-        message: 'Invalid item ID',
+        message: 'Invalid item id',
       });
       return;
     }
@@ -350,7 +350,7 @@ export async function restoreDocumentById(
     });
 
   } catch (error) {
-    console.error('Error restoring deleted item by ID:', error);
+    console.error('Error restoring deleted item by id:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error',

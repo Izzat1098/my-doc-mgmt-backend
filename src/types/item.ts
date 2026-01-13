@@ -5,14 +5,14 @@
 export interface Item {
   id: number;
   title: string;
-  item_type: 'folder' | 'file';
-  parent_id: number | null;
-  file_size_kb: number | null;
-  s3_url: string | null;
-  created_by: string | null;
-  deleted_at: Date | null;
-  created_at: Date;
-  updated_at: Date;
+  itemType: 'folder' | 'file';
+  parentId: number | null;
+  fileSizeKb: number | null;
+  s3Url: string | null;
+  createdBy: string | null;
+  deletedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 /**
@@ -20,11 +20,11 @@ export interface Item {
  */
 export interface CreateItem {
   title: string;
-  item_type: 'folder' | 'file';
-  parent_id: number | null;
-  file_size_kb?: number | null;
-  s3_url?: string | null;
-  created_by?: string | null;
+  itemType: 'folder' | 'file';
+  parentId: number | null;
+  fileSizeKb?: number | null;
+  s3Url?: string | null;
+  createdBy?: string | null;
 }
 
 /**
@@ -32,5 +32,5 @@ export interface CreateItem {
  */
 export interface UpdateItem {
   title?: string;
-  parent_id?: number | null;
+  parentId?: number | null;
 }

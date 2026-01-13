@@ -3,8 +3,28 @@ import { pool } from '../db/connection.js';
 import type { Item, CreateItem } from '../types/item.js';
 
 /**
- * Get an item by ID from the database
- * @param id - The item ID
+ * Map database row (snake_case) to Item type (camelCase)
+ * @param row - Database row with snake_case columns
+ * @returns Item object with camelCase properties
+ */
+function mapDbRowToItem(row: mysql.RowDataPacket): Item {
+  return {
+    id: row.id,
+    title: row.title,
+    itemType: row.item_type,
+    parentId: row.parent_id,
+    fileSizeKb: row.file_size_kb,
+    s3Url: row.s3_url,
+    createdBy: row.created_by,
+    deletedAt: row.deleted_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+/**
+ * Get an item by id from the database
+ * @param id - The item id
  * @returns The item or null if not found
  */
 export async function getItemById (id: number): Promise<Item | null> {
@@ -17,12 +37,12 @@ export async function getItemById (id: number): Promise<Item | null> {
     return null;
   }
 
-  return rows[0] as Item;
+  return mapDbRowToItem(rows[0] as mysql.RowDataPacket);
 };
 
 /**
  * Get all items at root level or within a specific folder
- * @param parentId - The parent folder ID (null for root level)
+ * @param parentId - The parent folder id (null for root level)
  * @returns Array of items
  */
 export async function getItemsByParentId (
@@ -36,7 +56,7 @@ export async function getItemsByParentId (
 
   const param = parentId === null ? [] : [parentId];
   const [rows] = await pool.execute<mysql.RowDataPacket[]>(query, param);
-  return rows as Item[];
+  return rows.map(mapDbRowToItem);
 };
 
 /**
@@ -51,7 +71,7 @@ export async function getItemsByTitle (
   const param = [`%${title}%`];
 
   const [rows] = await pool.execute<mysql.RowDataPacket[]>(query, param);
-  return rows as Item[];
+  return rows.map(mapDbRowToItem);
 };
 
 /**
@@ -66,7 +86,7 @@ export async function getItemsByType (
   const param = [itemType];
 
   const [rows] = await pool.execute<mysql.RowDataPacket[]>(query, param);
-  return rows as Item[];
+  return rows.map(mapDbRowToItem);
 };
 
 /**
@@ -92,7 +112,7 @@ export async function getItemsByTitleParentType (
   const query = `SELECT * FROM items WHERE title LIKE ? AND ${parentClause} AND item_type = ? AND deleted_at IS NULL ORDER BY item_type ASC, title ASC`;
 
   const [rows] = await pool.execute<mysql.RowDataPacket[]>(query, [...param, itemType]);
-  return rows as Item[];
+  return rows.map(mapDbRowToItem);
 };
 
 
@@ -102,13 +122,13 @@ export async function getItemsByTitleParentType (
  * @returns The newly created item
  */
 export async function createItem(data: CreateItem): Promise<Item> {
-  const { title, item_type, parent_id, file_size_kb, s3_url, created_by } = data;
+  const { title, itemType, parentId, fileSizeKb, s3Url, createdBy } = data;
 
   // Insert the item
   const [result] = await pool.execute<mysql.ResultSetHeader>(
     `INSERT INTO items (title, item_type, parent_id, file_size_kb, s3_url, created_by) 
      VALUES (?, ?, ?, ?, ?, ?)`,
-    [title, item_type, parent_id, file_size_kb, s3_url, created_by]
+    [title, itemType, parentId, fileSizeKb, s3Url, createdBy]
   );
 
   const insertId = result.insertId;
@@ -128,19 +148,19 @@ export async function createItem(data: CreateItem): Promise<Item> {
   return {
     id: insertId,
     title,
-    item_type,
-    parent_id,
-    file_size_kb: file_size_kb || null,
-    s3_url: s3_url || null,
-    created_by: created_by || null,
-    deleted_at: null,
-    created_at: new Date(),
-    updated_at: new Date(),
+    itemType,
+    parentId,
+    fileSizeKb: fileSizeKb || null,
+    s3Url: s3Url || null,
+    createdBy: createdBy || null,
+    deletedAt: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 }
 
 /**
- * Soft delete an item by ID
+ * Soft delete an item by id
  * @param id - The item ID to delete
  * @returns True if deleted, false if item not found
  */
@@ -161,12 +181,12 @@ export async function getDeletedItems(): Promise<Item[]> {
   const query = `SELECT * FROM items WHERE deleted_at IS NOT NULL ORDER BY item_type ASC, title ASC`;
 
   const [rows] = await pool.execute<mysql.RowDataPacket[]>(query);
-  return rows as Item[];
+  return rows.map(mapDbRowToItem);
 };
 
 /**
- * Restore deleted item by ID
- * @param id - The item ID to be restored
+ * Restore deleted item by id
+ * @param id - The item id to be restored
  * @returns True if restored, false if not
  */
 export async function restoreDeletedItemById(id: number): Promise<boolean> {
