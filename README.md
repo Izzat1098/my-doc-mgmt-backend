@@ -175,9 +175,9 @@ my-doc-mgmt-backend/
 The database uses a single `items` table with a self-referencing foreign key to create a tree structure.
 
 **Key Points:**
-- `parent_id` creates parent-child relationships (NULL = root level)
-- `item_type` determines if it's a folder or file
-- Soft delete using `deleted_at` timestamp
+- `parentId` creates parent-child relationships (NULL = root level)
+- `itemType` determines if it's a folder or file
+- Soft delete using `deletedAt` timestamp
 - Cascade delete removes children when parent is deleted
 
 **Full schema**: See [src/db/schema.sql](src/db/schema.sql)  
@@ -283,9 +283,7 @@ GET /api/health
   "environment": "development"
 }
 ```
-
 </details>
-
 
 
 ## ☁️ AWS S3 Integration
