@@ -27,7 +27,8 @@ export const errorHandler = (
   _next: NextFunction
 ): void => {
   const statusCode = err instanceof AppError ? err.statusCode : 500;
-  const message = err instanceof AppError ? err.message : 'Internal Server Error';
+  const message =
+    err instanceof AppError ? err.message : 'Internal Server Error';
 
   const errorResponse: ErrorResponse = {
     error: {

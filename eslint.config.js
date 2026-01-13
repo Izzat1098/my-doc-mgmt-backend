@@ -5,7 +5,7 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    ignores: ['dist/', 'node_modules/']
+    ignores: ['dist/', 'node_modules/'],
   },
   {
     rules: {
@@ -13,9 +13,9 @@ export default tseslint.config(
         'error',
         {
           argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_'
-        }
-      ]
-    }
+          varsIgnorePattern: '^_',
+        },
+      ],
+    },
   }
 );

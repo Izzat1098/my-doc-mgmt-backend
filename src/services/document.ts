@@ -1,6 +1,6 @@
-import mysql from 'mysql2/promise';
 import { pool } from '../db/connection.js';
 import type { Item, CreateItem } from '../types/item.js';
+import mysql from 'mysql2/promise';
 
 /**
  * Map database row (snake_case) to Item type (camelCase)
@@ -27,7 +27,7 @@ function mapDbRowToItem(row: mysql.RowDataPacket): Item {
  * @param id - The item id
  * @returns The item or null if not found
  */
-export async function getItemById (id: number): Promise<Item | null> {
+export async function getItemById(id: number): Promise<Item | null> {
   const [rows] = await pool.execute<mysql.RowDataPacket[]>(
     'SELECT * FROM items WHERE id = ? AND deleted_at IS NULL',
     [id]
@@ -38,48 +38,43 @@ export async function getItemById (id: number): Promise<Item | null> {
   }
 
   return mapDbRowToItem(rows[0] as mysql.RowDataPacket);
-};
+}
 
 /**
  * Get all items at root level or within a specific folder
  * @param parentId - The parent folder id (null for root level)
  * @returns Array of items
  */
-export async function getItemsByParentId (
+export async function getItemsByParentId(
   parentId: number | null
 ): Promise<Item[]> {
-
-  const whereClause = parentId === null 
-    ? 'parent_id IS NULL' 
-    : 'parent_id = ?';
+  const whereClause = parentId === null ? 'parent_id IS NULL' : 'parent_id = ?';
   const query = `SELECT * FROM items WHERE ${whereClause} AND deleted_at IS NULL ORDER BY item_type ASC, title ASC`;
 
   const param = parentId === null ? [] : [parentId];
   const [rows] = await pool.execute<mysql.RowDataPacket[]>(query, param);
   return rows.map(mapDbRowToItem);
-};
+}
 
 /**
  * Get all items with the title
  * @param title
  * @returns Array of items
  */
-export async function getItemsByTitle (
-  title: string
-): Promise<Item[]> {
+export async function getItemsByTitle(title: string): Promise<Item[]> {
   const query = `SELECT * FROM items WHERE title LIKE ? AND deleted_at IS NULL ORDER BY item_type ASC, title ASC`;
   const param = [`%${title}%`];
 
   const [rows] = await pool.execute<mysql.RowDataPacket[]>(query, param);
   return rows.map(mapDbRowToItem);
-};
+}
 
 /**
  * Get all items with the type
  * @param itemType
  * @returns Array of items
  */
-export async function getItemsByType (
+export async function getItemsByType(
   itemType: 'folder' | 'file'
 ): Promise<Item[]> {
   const query = `SELECT * FROM items WHERE item_type = ? AND deleted_at IS NULL ORDER BY item_type ASC, title ASC`;
@@ -87,34 +82,33 @@ export async function getItemsByType (
 
   const [rows] = await pool.execute<mysql.RowDataPacket[]>(query, param);
   return rows.map(mapDbRowToItem);
-};
+}
 
 /**
  * Get all items with the title and parent id
- * @param title 
+ * @param title
  * @param parentId
  * @param itemType
  * @returns Array of items
  */
-export async function getItemsByTitleParentType (
+export async function getItemsByTitleParentType(
   title: string,
   parentId: number | null,
   itemType: 'folder' | 'file'
 ): Promise<Item[]> {
-  const parentClause = parentId === null 
-    ? 'parent_id IS NULL' 
-    : 'parent_id = ?';
-  
-  const param = parentId === null 
-    ? [`%${title}%`]
-    : [`%${title}%`, parentId];
+  const parentClause =
+    parentId === null ? 'parent_id IS NULL' : 'parent_id = ?';
+
+  const param = parentId === null ? [`%${title}%`] : [`%${title}%`, parentId];
 
   const query = `SELECT * FROM items WHERE title LIKE ? AND ${parentClause} AND item_type = ? AND deleted_at IS NULL ORDER BY item_type ASC, title ASC`;
 
-  const [rows] = await pool.execute<mysql.RowDataPacket[]>(query, [...param, itemType]);
+  const [rows] = await pool.execute<mysql.RowDataPacket[]>(query, [
+    ...param,
+    itemType,
+  ]);
   return rows.map(mapDbRowToItem);
-};
-
+}
 
 /**
  * Create a new item (folder or file)
@@ -140,7 +134,10 @@ export async function createItem(data: CreateItem): Promise<Item> {
       return createdItem;
     }
   } catch (error) {
-    console.error('Failed to fetch created item, returning constructed object:', error);
+    console.error(
+      'Failed to fetch created item, returning constructed object:',
+      error
+    );
   }
 
   // Fallback: return constructed object if fetch fails
@@ -182,7 +179,7 @@ export async function getDeletedItems(): Promise<Item[]> {
 
   const [rows] = await pool.execute<mysql.RowDataPacket[]>(query);
   return rows.map(mapDbRowToItem);
-};
+}
 
 /**
  * Restore deleted item by id

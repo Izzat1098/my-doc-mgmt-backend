@@ -6,7 +6,7 @@ async function startServer(): Promise<void> {
   try {
     // Test database connection before starting server
     await testDbConnection();
-    
+
     app.listen(env.PORT, () => {
       console.log(`
 X─────────────────────────────────────────X
@@ -29,11 +29,10 @@ X──────────────────────────�
 
     process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);
   }
-};
+}
 
 startServer();

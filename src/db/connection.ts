@@ -1,5 +1,5 @@
-import mysql from 'mysql2/promise';
 import { env } from '../config/env.js';
+import mysql from 'mysql2/promise';
 
 /**
  * Database connection pool
@@ -15,5 +15,3 @@ export const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
 });
-
-

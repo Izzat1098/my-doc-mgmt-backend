@@ -1,17 +1,17 @@
-import express, { type Application } from 'express';
-import cors from 'cors';
 import { env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
 import { requestLogger } from './middlewares/logger.js';
-import healthRouter from './routes/health.js';
 import documentRouter from './routes/document.js';
+import healthRouter from './routes/health.js';
+import cors from 'cors';
+import express, { type Application } from 'express';
 
 const app: Application = express();
 
 // CORS configuration
 app.use(
   cors({
-    origin: env.CORS_ORIGIN.split(','),  // Supports multiple origins
+    origin: env.CORS_ORIGIN.split(','), // Supports multiple origins
     credentials: true,
   })
 );

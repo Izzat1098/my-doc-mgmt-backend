@@ -1,4 +1,4 @@
-import { pool } from './connection.js'
+import { pool } from './connection.js';
 
 /**
  * Test database connection
@@ -10,7 +10,6 @@ export async function testDbConnection(): Promise<void> {
     // Test using the shared pool
     await pool.execute('SELECT 1');
     console.log('✅ Database connection successful');
-
   } catch (error) {
     console.error('❌ Database connection failed:', error);
     throw new Error('Failed to connect to database');

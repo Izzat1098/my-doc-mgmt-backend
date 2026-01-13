@@ -1,5 +1,12 @@
+import {
+  getDocuments,
+  getDocumentById,
+  addDocument,
+  deleteDocumentById,
+  getDeletedDocuments,
+  restoreDocumentById,
+} from '../controllers/document.js';
 import { Router } from 'express';
-import { getDocuments, getDocumentById, addDocument, deleteDocumentById, getDeletedDocuments, restoreDocumentById } from '../controllers/document.js';
 
 const router = Router();
 
@@ -31,7 +38,7 @@ router.get('/:id', getDocumentById);
  * @desc    Add item
  * @access  Public
  */
-router.post("/", addDocument)
+router.post('/', addDocument);
 
 /**
  * @route   DELETE /api/documents/:id
