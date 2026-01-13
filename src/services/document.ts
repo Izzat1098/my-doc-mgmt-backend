@@ -55,6 +55,48 @@ export async function getItemsByTitle (
 };
 
 /**
+ * Get all items with the type
+ * @param itemType
+ * @returns Array of items
+ */
+export async function getItemsByType (
+  itemType: 'folder' | 'file'
+): Promise<Item[]> {
+  const query = `SELECT * FROM items WHERE item_type = ? AND deleted_at IS NULL ORDER BY item_type ASC, title ASC`;
+  const param = [itemType];
+
+  const [rows] = await pool.execute<mysql.RowDataPacket[]>(query, param);
+  return rows as Item[];
+};
+
+/**
+ * Get all items with the title and parent id
+ * @param title 
+ * @param parentId
+ * @param itemType
+ * @returns Array of items
+ */
+export async function getItemsByTitleParentType (
+  title: String,
+  parentId: number | null,
+  itemType: 'folder' | 'file'
+): Promise<Item[]> {
+  const parentClause = parentId === null 
+    ? 'parent_id IS NULL' 
+    : 'parent_id = ?';
+  
+  const param = parentId === null 
+    ? [`%${title}%`]
+    : [`%${title}%`, parentId];
+
+  const query = `SELECT * FROM items WHERE title LIKE ? AND ${parentClause} AND item_type = ? AND deleted_at IS NULL ORDER BY item_type ASC, title ASC`;
+
+  const [rows] = await pool.execute<mysql.RowDataPacket[]>(query, [...param, itemType]);
+  return rows as Item[];
+};
+
+
+/**
  * Create a new item (folder or file)
  * @param data - The item data to create
  * @returns The newly created item

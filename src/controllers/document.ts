@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { getItemById, getItemsByParentId, getItemsByTitle, createItem, deleteItemById, getDeletedItems, restoreDeletedItemById } from '../services/document.js';
+import { getItemById, getItemsByParentId, getItemsByTitle, createItem, deleteItemById, getDeletedItems, restoreDeletedItemById, getItemsByTitleParentType } from '../services/document.js';
 import type { Item, CreateItem } from '../types/item.js';
 import { createPresignedPost } from '../services/s3.js';
 
@@ -135,7 +135,6 @@ export async function addDocument(
   res: Response
 ): Promise<void> {
   try {
-    console.log(req.body)
     const { title, item_type, parent_id, file_size_kb, created_by }: CreateItem = req.body;
 
     // Validate required fields
@@ -164,6 +163,32 @@ export async function addDocument(
         });
         return;
       }
+      const parentItem = await getItemById(parent_id);
+      if (!parentItem) {
+        res.status(400).json({
+          success: false,
+          message: 'parent_id does not exists',
+        });
+        return;
+
+      } else if (parentItem.item_type !== 'folder') {
+        res.status(400).json({
+          success: false,
+          message: 'parent_id is not a folder',
+        });
+        return;
+      }
+    }
+
+    // Validate that item is not already in parent folder
+    const existingItems = await getItemsByTitleParentType(title, parent_id !== undefined ? parent_id : null, item_type);
+
+    if (existingItems && existingItems.length > 0) {
+      res.status(400).json({
+        success: false,
+        message: 'item with same file name already exists',
+      });
+      return;
     }
 
     let s3Url = null
