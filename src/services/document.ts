@@ -101,7 +101,7 @@ export async function getItemsByTitleParentType(
 
   const param = parentId === null ? [`%${title}%`] : [`%${title}%`, parentId];
 
-  const query = `SELECT * FROM items WHERE title LIKE ? AND ${parentClause} AND item_type = ? AND deleted_at IS NULL ORDER BY item_type ASC, title ASC`;
+  const query = `SELECT * FROM items WHERE title = ? AND ${parentClause} AND item_type = ? AND deleted_at IS NULL ORDER BY item_type ASC, title ASC`;
 
   const [rows] = await pool.execute<mysql.RowDataPacket[]>(query, [
     ...param,
